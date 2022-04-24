@@ -1,0 +1,24 @@
+﻿/*----------------------------------------------------------------------------------------------------------------------------------------*/
+/* https://en.wikipedia.org/wiki/Attribute_grammar#:~:text=An%20attribute%20grammar%20is%20a,nonterminal%20symbols%20of%20the%20grammar   */
+/*----------------------------------------------------------------------------------------------------------------------------------------*/
+
+// Only top-down l to r parser are possible (-> a recursion of a production needs to be right ... not! left)
+
+S		::= Expr
+
+Expr	::= Ter add Expr
+Expr	::= Ter
+
+Ter		::= Fac mult Ter
+Ter		::= Fac
+
+Fac		::= o_brac Expr c_brac
+Fac		::= integer
+
+add		::= "+"
+mult	::= "*"
+
+o_brac	::= "("
+c_brac	::= ")"
+
+integer ::= [Int32]

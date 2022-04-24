@@ -1,0 +1,23 @@
+﻿/*----------------------------------------------------------------------------------------------------------------------------------------*/
+/* https://en.wikipedia.org/wiki/Attribute_grammar#:~:text=An%20attribute%20grammar%20is%20a,nonterminal%20symbols%20of%20the%20grammar   */
+/*----------------------------------------------------------------------------------------------------------------------------------------*/
+
+S		::= Expr					{ S.value = expr.value }
+
+Expr1	::= Ter add Expr2			{ Expr1.value = Ter.value + Expr2.value}
+Expr	::= Ter						{ Expr.value = Ter.value }
+
+Ter1	::= Fac mult Ter2			{ Ter1.value = Fac.value * Ter2.value}
+Ter		::= Fac						{ Ter.value = Fac.value }
+
+Fac		::= o_brac Expr c_brac		{ Fac.value = Expr.value }
+Fac		::= integer					{ Fac.value = integer.value }
+
+add		::= "+"
+mult	::= "*"
+
+o_brac	::= "("
+c_brac	::= ")"
+
+*/ integer.str = [Int32] /*
+integer ::= [Int32]					{ integer.value = strToInt(integer.str) }
