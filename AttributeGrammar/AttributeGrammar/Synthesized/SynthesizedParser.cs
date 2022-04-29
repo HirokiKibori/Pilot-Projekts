@@ -29,11 +29,14 @@ namespace AttributeGrammar.Synthesized
                  CurrentPos,
                  parser,
                  CurrentPos);
+
+        private static Parser<char, string> FailIfThereIsSomething
+            => Any.ManyString().Assert(s => string.IsNullOrWhiteSpace(s));
         #endregion
 
         #region token
         private static readonly Parser<char, int> _integer
-            = (DecimalNum.Before(SkipWhitespaces)).Labelled("Int32");
+            = DecimalNum.Before(SkipWhitespaces).Labelled("Int32");
         #endregion
 
         #region productions
@@ -62,12 +65,14 @@ namespace AttributeGrammar.Synthesized
             );
 
         private static readonly Parser<char, Expression> S
-            = SkipWhitespaces.Then(Expr);
+            = from expression in SkipWhitespaces.Then(Expr)
+              from _ in FailIfThereIsSomething
+              select expression;
         #endregion
 
         #region interface
         public static Expression ParseExpression(string input)
-            => S.ParseOrThrow(input ?? throw new NullReferenceException(nameof(input)));
+            => S.ParseOrThrow(input ?? throw new ArgumentNullException(nameof(input)));
         #endregion
     }
 }

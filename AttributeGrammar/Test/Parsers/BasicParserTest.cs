@@ -31,6 +31,7 @@ namespace TestAttributeGrammar.Parsers
 
         [Theory]
         [InlineData("<")]
+        [InlineData("()")]
         [InlineData("())")]
         [InlineData("(()")]
         [InlineData("1 * * 1")]
@@ -56,9 +57,12 @@ namespace TestAttributeGrammar.Parsers
         [InlineData("-1", 1)]
         [InlineData("+1", 1)]
         [InlineData("(1)", 2)]
+        [InlineData(" ( 1 ) ", 2)]
         [InlineData("((1))", 3)]
         [InlineData("1 + -2", 2)]
         [InlineData("1 + +2", 2)]
+        [InlineData("-1 + 2", 2)]
+        [InlineData("+1 + 2", 2)]
         [InlineData("1 * 2 * 3", 1)]
         [InlineData("1 + 2 + 3", 3)]
         [InlineData("1 + 2 * 3 * ( 4 + (5 * 6) + (7))", 7)]
@@ -78,7 +82,7 @@ namespace TestAttributeGrammar.Parsers
     {
         public static int CountExpressions(Expression? expression)
         {
-            if (expression is null)
+            if(expression is null)
                 return 0;
 
             return 1 + CountExpressions(expression.Expr) + CountExpressionsInTerm(expression.Ter);
@@ -87,7 +91,7 @@ namespace TestAttributeGrammar.Parsers
         #region count expressions
         private static int CountExpressionsInTerm(Term? term)
         {
-            if (term is null)
+            if(term is null)
                 return 0;
 
             return CountExpressionsInTerm(term.Ter) + CountExpressionsInFactor(term.Fac);
@@ -95,7 +99,7 @@ namespace TestAttributeGrammar.Parsers
 
         private static int CountExpressionsInFactor(Factor factor)
         {
-            if (factor.Expr is not null)
+            if(factor.Expr is not null)
                 return CountExpressions(factor.Expr);
 
             return 0;
