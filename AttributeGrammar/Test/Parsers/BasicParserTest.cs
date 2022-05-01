@@ -1,13 +1,23 @@
-﻿using AttributeGrammar.Basic;
+﻿using System.Linq;
+
+using AttributeGrammar.Basic;
+
+using Sawmill;
 
 namespace TestAttributeGrammar.Parsers
 {
     public class BasicParserTest : BasicTest
     {
-        private static string INT32_OVERFLOW = $"{1.0d + int.MaxValue}";
-
         public BasicParserTest(ITestOutputHelper output)
               : base(output) { }
+
+        int CountExpressions(Node node)
+            => node
+                .SelfAndDescendants()
+                .OfType<Expression>()
+                .Count();
+
+        //TODO: Try to implement 'int Calculate(Node node)' and test expressions for the correct result
 
         [Fact]
         public void ParseExpression_null()
@@ -52,6 +62,28 @@ namespace TestAttributeGrammar.Parsers
             output.WriteLine(result.Message);
         }
 
+        [Fact]
+        public void ParseExpression_Integer_overflow()
+        {
+            string input = "" + (1.0d + int.MaxValue);
+
+            var parseInput = () => BasicParser.ParseExpression(input);
+            var result = Assert.Throws<OverflowException>(parseInput);
+
+            output.WriteLine(result.Message);
+        }
+
+        [Fact]
+        public void ParseExpression_Integer_underflow()
+        {
+            string input = "" + (int.MinValue - 1.0d);
+
+            var parseInput = () => BasicParser.ParseExpression(input);
+            var result = Assert.Throws<OverflowException>(parseInput);
+
+            output.WriteLine(result.Message);
+        }
+
         [Theory]
         [InlineData("1", 1)]
         [InlineData("-1", 1)]
@@ -70,40 +102,11 @@ namespace TestAttributeGrammar.Parsers
         public void ParseExpression_successfull(string input, int expectedExpressions)
         {
             var expression = BasicParser.ParseExpression(input);
-            var result = Help.CountExpressions(expression);
+            var result = CountExpressions(expression);
 
             Assert.Equal(expectedExpressions, result);
 
             output.WriteLine(expression.ToString());
         }
-    }
-
-    class Help
-    {
-        public static int CountExpressions(Expression? expression)
-        {
-            if(expression is null)
-                return 0;
-
-            return 1 + CountExpressions(expression.Expr) + CountExpressionsInTerm(expression.Ter);
-        }
-
-        #region count expressions
-        private static int CountExpressionsInTerm(Term? term)
-        {
-            if(term is null)
-                return 0;
-
-            return CountExpressionsInTerm(term.Ter) + CountExpressionsInFactor(term.Fac);
-        }
-
-        private static int CountExpressionsInFactor(Factor factor)
-        {
-            if(factor.Expr is not null)
-                return CountExpressions(factor.Expr);
-
-            return 0;
-        }
-        #endregion
     }
 }

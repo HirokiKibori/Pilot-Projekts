@@ -1,13 +1,17 @@
-﻿namespace AttributeGrammar.Basic
+﻿using Sawmill;
+
+namespace AttributeGrammar.Basic
 {
-    public class Positioned
+    public abstract record Node : IRewritable<Node>
     {
-        public SourcePos? Start { get; protected set; } = null;
-        public SourcePos? End { get; protected set; } = null;
+        public SourcePos? Start = null;
+        public SourcePos? End = null;
 
-        public Positioned() => (Start, End) = (default, default);
+        public abstract int CountChildren();
 
-        public void SetPosition(SourcePos start, SourcePos end) => (Start, End) = (start, end);
+        public abstract void GetChildren(Span<Node> childrenReceiver);
+
+        public abstract Node SetChildren(ReadOnlySpan<Node> newChildren);
 
         public override string ToString()
         {
@@ -18,14 +22,25 @@
         }
     }
 
-    public class Expression : Positioned
+    public record Expression : Node
     {
-        public Expression? Expr { get; } = null;
-        public Term Ter { get; }
+        public Expression? Expr = null;
+        public Term? Ter;
 
-        public Expression(Term term) => Ter = term;
+        public override int CountChildren() => Expr is not null ? 2 : 1;
 
-        public Expression(Expression expression, Term term) => (Expr, Ter) = (expression, term);
+        public override void GetChildren(Span<Node> childrenReceiver)
+        {
+            childrenReceiver[0] = Ter!;
+
+            if(Expr is not null)
+                childrenReceiver[1] = Expr!;
+        }
+
+        public override Node SetChildren(ReadOnlySpan<Node> newChildren)
+            => newChildren.Length < 2
+                ? new Expression { Ter = newChildren[0] as Term }
+                : new Expression { Ter = newChildren[0] as Term, Expr = newChildren[1] as Expression };
 
         public override string ToString()
         {
@@ -34,15 +49,25 @@
         }
     }
 
-    public class Term : Positioned
+    public record Term : Node
     {
-        public Term? Ter { get; } = null;
-        public Factor Fac { get; }
+        public Term? Ter = null;
+        public Factor? Fac;
 
-        public Term(Factor factor) => Fac = factor;
+        public override int CountChildren() => Ter is not null ? 2 : 1;
 
-        public Term(Term term, Factor factor) => (Ter, Fac) = (term, factor);
+        public override void GetChildren(Span<Node> childrenReceiver)
+        {
+            childrenReceiver[0] = Fac!;
 
+            if(Ter is not null)
+                childrenReceiver[1] = Ter!;
+        }
+
+        public override Node SetChildren(ReadOnlySpan<Node> newChildren)
+            => newChildren.Length < 2
+                ? new Term { Fac = newChildren[0] as Factor }
+                : new Term { Fac = newChildren[0] as Factor, Ter = newChildren[1] as Term };
 
         public override string ToString()
         {
@@ -50,13 +75,21 @@
         }
     }
 
-    public class Factor : Positioned
+    public record Factor : Node
     {
-        public Expression? Expr { get; } = null;
-        public int? Integer { get; } = null;
+        public Expression? Expr = null;
+        public int? Integer = null;
 
-        public Factor(Expression? expr) => Expr = expr;
-        public Factor(int integer) => Integer = integer;
+        public override int CountChildren() => Expr is not null ? 1 : 0;
+
+        public override void GetChildren(Span<Node> childrenReceiver)
+        {
+            if(Expr is not null)
+                childrenReceiver[0] = Expr!;
+        }
+
+        public override Node SetChildren(ReadOnlySpan<Node> newChildren)
+            => newChildren.Length > 0 ? new Factor { Expr = newChildren[0] as Expression } : this;
 
         public override string ToString()
         {

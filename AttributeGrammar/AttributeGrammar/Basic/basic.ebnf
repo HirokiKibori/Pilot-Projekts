@@ -6,19 +6,19 @@
 
 S		::= Expr
 
-Expr	::= Ter add Expr
+Expr	::= Ter _add Expr
 Expr	::= Ter
 
-Ter		::= Fac mult Ter
+Ter		::= Fac _mult Ter
 Ter		::= Fac
 
-Fac		::= o_brac Expr c_brac
-Fac		::= integer
+Fac		::= _o_brac Expr _c_brac
+Fac		::= Integer
 
-add		::= "+"
-mult	::= "*"
+_add	::= "+"
+_mult	::= "*"
 
-o_brac	::= "("
-c_brac	::= ")"
+_o_brac	::= "("
+_c_brac	::= ")"
 
-integer ::= [Int32]
+Integer ::= [Int32]

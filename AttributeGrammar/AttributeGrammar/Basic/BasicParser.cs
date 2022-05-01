@@ -20,55 +20,57 @@ namespace AttributeGrammar.Basic
         #endregion
 
         #region helper
-        private static Parser<char, T> PositionParser<T>(Parser<char, T> parser) where T : Positioned
+        private static Parser<char, T> PositionParser<T>(Parser<char, T> parser) where T : Node
              => Map((startPosition, result, endPosition)
-                 =>
-                    {
-                        result.SetPosition(startPosition, endPosition);
-                        return result;
-                    },
-                 CurrentPos,
-                 parser,
-                 CurrentPos);
+                     => result with { Start = startPosition, End = endPosition },
+                     CurrentPos,
+                     parser,
+                     CurrentPos
+                ).Labelled("positioned");
 
         private static Parser<char, string> FailIfThereIsSomething
             => Any.ManyString().Assert(s => string.IsNullOrWhiteSpace(s));
         #endregion
 
         #region token
-        private static readonly Parser<char, int> _integer
-            = DecimalNum.Before(SkipWhitespaces).Labelled("Int32");
+        private static Parser<char, int> Integer
+            => Symbol(
+                    from sign in OneOf(Char('+'), Char('-')).Or(Return('+'))
+                    from @value in Digit.AtLeastOnceString()
+                    select int.Parse(sign + @value)
+               ).Labelled("Int32");
         #endregion
 
         #region productions
         private static readonly Parser<char, Factor> Fac
             = Rec(() =>
                 OneOf(
-                     PositionParser(_o_brac.Then(Expr!.Before(_c_brac)).Select(expr => new Factor(expr))),
-                     _integer.Select(integer => new Factor(integer))
-                ).Labelled("factor")
-            );
+                     PositionParser(_o_brac.Then(Expr!.Before(_c_brac)).Select(expr => new Factor { Expr = expr })),
+                     Integer.Select(@integer => new Factor { Integer = @integer })
+                )
+            ).Labelled("factor");
 
         private static readonly Parser<char, Term> Ter
             = Rec(() =>
                 OneOf(
-                    PositionParser(Try(Fac.Before(_mult)).Then(Ter!, (fac, ter) => new Term(ter, fac))),
-                    PositionParser(Fac.Select(fac => new Term(fac)))
-                ).Labelled("term")
-            );
+                    PositionParser(Try(Fac.Before(_mult)).Then(Ter!, (fac, ter) => new Term { Ter = ter, Fac = fac })),
+                    PositionParser(Fac.Select(fac => new Term { Fac = fac }))
+                )
+            ).Labelled("term");
 
         private static readonly Parser<char, Expression> Expr
             = Rec(() =>
                 OneOf(
-                    PositionParser(Try(Ter.Before(_add)).Then(Expr!, (ter, expr) => new Expression(expr, ter))),
-                    PositionParser(Ter.Select(ter => new Expression(ter)))
-                ).Labelled("expression")
-            );
+                    PositionParser(Try(Ter.Before(_add)).Then(Expr!, (ter, expr) => new Expression { Expr = expr, Ter = ter })),
+                    PositionParser(Ter.Select(ter => new Expression { Ter = ter }))
+                )
+            ).Labelled("expression");
 
-        private static readonly Parser<char, Expression> S
-            = from expression in SkipWhitespaces.Then(Expr)
-              from _ in FailIfThereIsSomething
-              select expression;
+        private static readonly Parser<char, Expression> S = (
+                from expression in SkipWhitespaces.Then(Expr)
+                from _ in FailIfThereIsSomething
+                select expression
+            ).Labelled("one expression");
         #endregion
 
         #region interface
